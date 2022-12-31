@@ -4,4 +4,4 @@ project(wordle)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(wordle
-        solveInFive.cpp)
+        solveInFive.cpp words_handler.cpp)

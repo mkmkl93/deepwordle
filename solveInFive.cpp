@@ -26,6 +26,7 @@
 #include <atomic>
 #include <numeric>
 #include <filesystem>
+#include "words_handler.h"
 
 using int64 = int64_t;
 using namespace std;
@@ -473,34 +474,6 @@ static void showTable(ostream & tableFile, Path const & path, vector<string> con
 		tableFile << endl;
 	}
 }
-
-class WordsHandler {
-public:
-	vector<string> static solutions() {
-		string filename = "../wordle solutions sorted.txt";
-
-		return readWordFile(filename);
-	}
-
-	vector<string> static guesses() {
-		string filename = "../common.txt";
-
-		return readWordFile(filename);
-	}
-
-private:
-	// read a file of words into a vector
-	static vector<string> readWordFile(string const & fn) {
-		vector<string> words;
-		ifstream wordFile(fn);
-		string w;
-		while (getline(wordFile, w)) {
-			words.push_back(w);
-		}
-		wordFile.close();
-		return words;
-	}
-};
 
 int main() {
 	vector<string> solutions = WordsHandler::solutions();
