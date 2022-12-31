@@ -25,6 +25,7 @@
 #include <thread>
 #include <atomic>
 #include <numeric>
+#include <filesystem>
 
 using int64 = int64_t;
 using namespace std;
@@ -473,16 +474,42 @@ static void showTable(ostream & tableFile, Path const & path, vector<string> con
 	}
 }
 
-int main() {
+class WordsHandler {
+public:
+	vector<string> static solutions() {
+		string filename = "../wordle solutions sorted.txt";
 
-	//vector<string> allWords = readWordFile("wordle words lines.txt");
-	vector<string> solutionText = readWordFile("wordle solutions.txt");
+		return readWordFile(filename);
+	}
+
+	vector<string> static guesses() {
+		string filename = "../common.txt";
+
+		return readWordFile(filename);
+	}
+
+private:
+	// read a file of words into a vector
+	static vector<string> readWordFile(string const & fn) {
+		vector<string> words;
+		ifstream wordFile(fn);
+		string w;
+		while (getline(wordFile, w)) {
+			words.push_back(w);
+		}
+		wordFile.close();
+		return words;
+	}
+};
+
+int main() {
+	vector<string> solutions = WordsHandler::solutions();
 	//solution.resize(2315);  // only the first 2315 are used as solutions
 	//vector<string> guess = readWordFile("guesses5.txt");
-	vector<string> guess = readWordFile("common.txt");
+	vector<string> guess = WordsHandler::guesses();
 	sort(guess.begin(), guess.end());
 	vector<short> solution;
-	for (auto const & s : solutionText) {
+	for (auto const & s : solutions) {
 		auto loc = find(guess.begin(), guess.end(), s);
 //        assert (loc != guess.end());
 		if (loc != guess.end())
