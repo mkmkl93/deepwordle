@@ -30,7 +30,7 @@
 
 using int64 = int64_t;
 using namespace std;
-
+using ans_t = short;
 
 std::chrono::time_point<std::chrono::system_clock> now() {
 	return std::chrono::system_clock::now();
@@ -48,8 +48,8 @@ double since(const std::chrono::time_point<std::chrono::system_clock> &t0) {
 // the low-order digit is the last character.
 // 0 == no match, 1 == right letter, wrong place, 2 == right letter in right place
 // Using Wordle rules for duplicate letters, which are not treated the same
-static int getResponse(string guess, string solution) {
-	int g = 0;
+static ans_t getResponse(string guess, string solution) {
+	ans_t g = 0;
 	for (int i = 0; i < 5; ++i) {
 		if (i > 0)
 			g *= 3;
@@ -59,7 +59,7 @@ static int getResponse(string guess, string solution) {
 			solution[i] = ' ';
 		}
 	}
-	int y = 0;
+	ans_t y = 0;
 	for (int i = 0; i < 5; ++i) {
 		if (i > 0)
 			y *= 3;
@@ -76,9 +76,9 @@ static int getResponse(string guess, string solution) {
 
 // given a list of possible solutions and the solutionClue data for a specific guess word,
 // return a separate list for each of the 243 possible responses.
-static vector<int> splitIntoPartsCount(vector<short> const &solutions, vector<short> const & solutionClue) {
+static vector<int> splitIntoPartsCount(vector<ans_t> const &solutions, vector<ans_t> const & solutionClue) {
 	vector<int> count(243);
-	for (short sol : solutions) {
+	for (ans_t sol : solutions) {
 		count[solutionClue[sol]] += 1;
 	}
 	return count;
@@ -86,19 +86,19 @@ static vector<int> splitIntoPartsCount(vector<short> const &solutions, vector<sh
 
 // given a list of possible solutions and the solutionClue data for a specific guess word,
 // return a separate list for each of the 243 possible responses.
-static vector<vector<short>> splitIntoParts(vector<short> const &solutions, vector<short> const & solutionClue) {
+static vector<vector<ans_t>> splitIntoParts(vector<ans_t> const &solutions, vector<ans_t> const & solutionClue) {
 	vector<int> count = splitIntoPartsCount(solutions, solutionClue);
-	vector<vector<short>> parts(243);
+	vector<vector<ans_t>> parts(243);
 	for (int i = 0; i < 243; ++i)
 		parts[i].reserve(count[i]);
-	for (short sol : solutions) {
+	for (ans_t sol : solutions) {
 		parts[solutionClue[sol]].push_back(sol);
 	}
 	return parts;
 }
 
 // size of the largest partition
-static int splitIntoPartsMax(vector<short> const &solutions, vector<short> const & solutionClue) {
+static int splitIntoPartsMax(vector<ans_t> const &solutions, vector<ans_t> const & solutionClue) {
 	vector<int> count = splitIntoPartsCount(solutions, solutionClue);
 	return *max_element(count.begin(), count.end());
 }
@@ -163,390 +163,228 @@ static array<int, 5> collectDead(string w, int response, array<int, 5> const & d
 }
 
 // decision tree
+
 struct Path {
-	int guess = -1;
-	int nSolution = -1;
-	int maxDepth = 0;	// worst case number of guesses, including this guess
-	double ev = 0;	// expected number of guess, including this guess
-	int64 solutionsPack = -1;	// up to 5 possible solutions packed 12-bits each into 64-bit int
-	map<int, Path> choices;   // [243]
+	int maxDepth = 999;	// worst case number of guesses, including this guess
+	vector<int> solution;
 };
 
 // Main work function to recursively explore and optimize the decisition tree from a given starting point.
-static Path exploreGuess(vector<short> const & solution, int g, vector<vector<short>> const & solutionClue, vector<string> const & guess,
-						 array<int, 5> const & deadLetters, int depthToBeat, int effort, bool shallow, int callDepth) {
+/* solution - vector z id rozwiązań z tablicy zgadywania "guess"
+ * g - którym rozwiązaniem się aktualnie zajmujemy
+ * solutionClue[i][j] - jaką odpowiedź dostaniemy jeżeli zapytamy o 'i' a hasłem jest 'j'
+ * guess - lista wyrazów do zgadywania
+ * deadLetters - które litery na jakiej pozycji są dozwolone
+ * depthToBeat - ???
+ */
+
+map< tuple<int, array<int, 5>>, int> mapa;
+
+static Path exploreGuess(vector<ans_t> const &solution, int g, vector<vector<ans_t>> const &solutionClue, vector<string> const &guess,
+						 array<int, 5> const &deadLetters) {
+//	cout << "exploreGuess g: " << g << " depthToBeat: " << depthToBeat << "\n";
+
+	mapa[ {g, deadLetters} ]++;
+
 	Path path;
-	path.guess = g;
-	path.nSolution = int(solution.size());
-	if (path.nSolution <= 1) {
-		// should never happen since caller tests for this (except the very first caller, which has many solutions)
-		cout << "wasn't expecting <= 1 solution for " << g << endl;
-		path.maxDepth = path.nSolution;
-		path.ev = path.nSolution;
-		if (path.nSolution > 0)
-			path.solutionsPack = solution[0];
-		return path;
-	}
-	int nGuess = int(solutionClue.size()); // ~3000
+	path.maxDepth = -1;
+	int nGuess = int(guess.size()); // ~3000
 
-	double evsum = 0;
-	double evn = 0;
-	vector<vector<short>> const & parts = splitIntoParts(solution, solutionClue[g]);
+	// Jakie hasła by dostały konkretną odpowiedź gdybyśmy zapytali o słowo o indeksie g
+	const vector<vector<ans_t>> &parts = splitIntoParts(solution, solutionClue[g]);
 
-	// special case for 242 == all green
-	if (!parts[242].empty()) {
-		evsum += 1;
-		evn += 1;
-		path.solutionsPack = g;	// indicates the guess is a solution
-	}
-	// first pass: check viability of this guess before exploring any subtree
 	for (int ip = 0; ip < 242; ++ip) {
-		vector<short> const & sols = parts[ip];
+		const vector<ans_t> &sols = parts[ip];
+		// Dane zapytanie g w ogóle niczego nie zmienia bo po podziale dostajemy dokładnie taki samy zbiór możliwych haseł
 		if (solution.size() == sols.size()) {
 			// must be a repeated or otherwise useless guess
 			path.maxDepth = 999;
-			return path;
-		}
-		if (callDepth > 0 &&
-			( (solution.size() > 100 && sols.size() > solution.size() * (22 + effort * 5) / 100)
-			|| (solution.size() > 75 && sols.size() > solution.size() * (33 + effort * 2) / 100)
-			|| (solution.size() > 50 && sols.size() > solution.size() * (44 + effort * 2) / 100))) {
-			// not a very productive guess
-			path.maxDepth = 999;
+//			cout << "return 2\n";
 			return path;
 		}
 	}
-	// second pass: dive into each partition
+
+	// Sprawdzamy każdą możliwą odpowiedź wyroczni
 	for (int ip = 0; ip < 242; ++ip) {
-//		auto t0 = std::chrono::system_clock::now();
-		vector<short> const & sols = parts[ip];
+		// Lista haseł pasujące do danej odpowiedzi
+		const vector<ans_t> &sols = parts[ip];
 		if (sols.empty())
 			continue;
 
+		// Liczba pasujących haseł, jeżeli dostaniemy odpowiedź `ip`
 		int nipSol = int(sols.size());
+		// TODO ???
 		Path best;
+		// Jest tylko jedna możliwa odpowiedź ale nie jest to słowo `g`, bo nie dostaliśmy odpowiedzi 242
 		if (nipSol == 1) {
 			// only one solution, but it isn't guess[g] because the response is not 242
-			best.guess = sols[0];
 			best.maxDepth = 1;
-			best.nSolution = 1;
-			best.ev = best.maxDepth;
-			best.solutionsPack = sols[0];
-		}
-		else if (nipSol == 2) {
-			best.guess = sols[0];
+			best.solution.emplace_back(sols[0]);
+		} else if (nipSol == 2) {
+			// Mamy dwie możliwość, więc no lepiej się nie da
 			best.maxDepth = 2;
-			best.nSolution = 2;
-			best.ev = 1.5;
-			best.solutionsPack = (sols[1] << 12) + sols[0];
-		}
-		else if (nipSol < 6) {
-			// see if any solution will work
-			for (int ig : sols) {
-				array<int, 5> clues;
-				for (int j = 0; j < nipSol; ++j) {
-					clues[j] = solutionClue[ig][sols[j]];
-				}
-				sort(clues.begin(), clues.begin() + nipSol);
-				if (std::adjacent_find(clues.begin(), clues.begin() + nipSol) == clues.begin() + nipSol) {
-					best.guess = ig;
-					best.nSolution = nipSol;
-					best.ev = double(nipSol * 2 - 1) / nipSol;
-					best.maxDepth = 2;
-					best.solutionsPack = 0;
-					for (int i = 0; i < min(best.nSolution, 5); ++i) {
-						if (ig != sols[i])
-							best.solutionsPack = (best.solutionsPack << 12) + sols[i];
-					}
-					best.solutionsPack = (best.solutionsPack << 12) + ig;	// put the best next guess first
-					break;
-				}
-			}
-		}
-		if (best.guess >= 0) {
-			// one of the above quick checks worked
-		}
-		else if (depthToBeat <= 3
-				 || shallow || (callDepth == 1 && nipSol >= 70 + effort * 20 ) || (callDepth == 2 && nipSol > (8 + effort * 3)) || callDepth == 3) {
-			// pessimistic guess
-//			if (depthToBeat > 3 && callDepth == 2 && !shallow)
-//				cout << "guessing" << " " << callDepth << " " << nipSol << endl;
-			best.guess = sols[0];
-			best.nSolution = int(sols.size());
-			best.maxDepth = 3 + best.nSolution / 10;
-			best.ev = 1.75 + best.nSolution / 6.0;
-			best.solutionsPack = sols[0];
-			for (int i = 1; i < min(best.nSolution, 5); ++i)
-				best.solutionsPack = (best.solutionsPack << 12) + sols[i];
-		}
-		else {
+			best.solution.emplace_back(sols[1]);
+			best.solution.emplace_back(sols[0]);
+		} else {
+			// Nowy stan martwych liter, jeżeli zgadujemy hasło `guess[g]`, dostaliśmy odpowiedź `ip` i początkowo mieliśmy stan `deadLetters`
 			array<int, 5> deadLetters2 = collectDead(guess[g], ip, deadLetters);
-			int deadLimit = (callDepth == 0 ? 0 : callDepth == 1 ? 1 : 2) + int(nipSol < 20);
-			
-			// first word pass: filter words bases on dead letters and also collect the max partition size for each word
-			vector<pair<short, short>> maxPart;	// pair<maxPart, guess>
-			for (int ig = 0; ig < nGuess; ++ig) {
-				if (g == ig)
-					continue;
-				string const & iw = guess[ig];
-				int ndead = 0;
-				for (int i = 0; i < 5; ++i) {
-					if ((deadLetters2[i] & (1 << (iw[i] - 'a'))) != 0) {
-						ndead++;
-						if (ndead > deadLimit)
-							break;
-					}
-				}
-				if (ndead > deadLimit)
-					continue;
-				maxPart.push_back(make_pair(short(splitIntoPartsMax(sols, solutionClue[ig])), short(ig)));
-			}
-			if (maxPart.empty()) {
-				cout << " *** no words to consider " << g << endl;
-				continue;
-			}
-			sort(maxPart.begin(), maxPart.end());
-			int bestMax = maxPart.front().first;
-			vector<int> visit;
-			if (bestMax <= 2) {
-				// found a winner -- just use that
-				visit.push_back(maxPart.front().second);
-			}
-			else {
-				// choose most promising words to visit fully
-				int limit = bestMax * 125 / 100 + 2;
-//				if (callDepth == 0) {
-//					cout << guess[g] << setw(4) << ip << " " << setw(4) << bestMax << setw(4) << limit << endl;
-//				}
-				if (callDepth == 0) {
-					// still far enough from end that we need to keep more avenues open
-					limit = max(limit, nipSol / (effort == 0 ? 7 : effort == 1 ? 6 : effort <= 3 ? 5 : 4));	//5
-					// HAUTE, SHADE and SPADE all have a best route with max of 36 or 35 and nipSol in 210..240 range (and bestMax is ~18)
-				}
-				int minVisit = clamp(int(maxPart.size()), 1, 5);
-				for (auto const & mp : maxPart) {
-					if (mp.first <= limit || visit.size() < minVisit)
-						visit.push_back(mp.second);
-					else
-						break;
-				}
-			}
-//			cout << "reduction " << g << " " << setw(4) << maxPart.size() << " " << visit.size() << " " << fixed << setprecision(2) << double(visit.size()) / double(maxPart.size()) << endl;
-			vector<int> revisit;
-			double bestScore = 999;
+
 			best.maxDepth = 999;
-			int minGood = effort == 0 ? 10 : effort == 1 ? 3 : 1;	// as long as maxDepth effort is light, try more for low EV
-			int nGood = 0;
-			for (int ig : visit) {
-				Path p = exploreGuess(sols, ig, solutionClue, guess, deadLetters2, best.maxDepth, effort, shallow || callDepth == 1, callDepth + 1);
-				if (p.maxDepth <= 2)
-					nGood++;
-				if (p.maxDepth + p.ev < bestScore) {
-					bestScore = p.maxDepth + p.ev;
-					best = std::move(p);
-					if (best.maxDepth <= 2 && nGood >= minGood)
-						break;
-				}
-				else if (callDepth == 1 && p.maxDepth > 3) {
-					revisit.push_back(ig);
-				}
-			}
 
-			if (callDepth == 1 && depthToBeat >= 4	// our best.maxDepth will be at least 3 and then add 1 before returning, so we can't beat 4
-				&& best.maxDepth > 3	// 3 is ok, since the below code is not going to find a 2
-				&& !shallow) {
-				// another pass not changing shallow
-				for (int ig : revisit) {
-	//				if (callDepth <= 0) {
-	//					cout << "explore " << callDepth << setw(3 * callDepth) << " " << guess[g] << " " << setw(3) << ip << " " << guess[ig] << " " << nipSol << endl;
-	//				}
-					Path p = exploreGuess(sols, ig, solutionClue, guess, deadLetters2, best.maxDepth, effort, shallow, callDepth + 1);
-					if (p.maxDepth + p.ev < bestScore) {
-						bestScore = p.maxDepth + p.ev;
-						best = std::move(p);
-						if (best.maxDepth <= 2)
-							break;
-					}
-				}
-
+			for (int ig = 0; ig < nGuess; ++ig) {
+				Path p = exploreGuess(sols, ig, solutionClue, guess, deadLetters2);
+				if (p.maxDepth < best.maxDepth)
+					best = p;
 			}
 		}
 
-		evsum += best.ev * best.nSolution;
-		evn += best.nSolution;
 		if (best.maxDepth > path.maxDepth)
-			path.maxDepth = best.maxDepth;
-		path.choices[ip] = best;
-//		if (callDepth == 0 && sols.size() > 10) {
-//			cout << ip << " " << sols.size();
-//			cout << std::fixed << std::setprecision(3) << "  sec: " << " " << since(t0) << endl;
-//		}
+			path = best;
 	}
-	path.ev = evsum / evn + 1;
+
+//	cout << "return ok\n";
+	path.solution.emplace_back(g);
 	path.maxDepth += 1;
 	return path;
 }
 
 
-static void showPath(ofstream & treefile, string const & prefix, Path const & path, vector<string> const & guess, vector<vector<short>> const & solutionClue, int depth = 0) {
-	if (path.guess < 0)
-		return;
-	if (path.nSolution <= 0)
-		return;
-	if (path.choices.empty()) {
-		if (path.maxDepth <= 2 && path.nSolution <= 5 && path.solutionsPack >= 0) {
-			// expand the compressed path tree
-			int g = path.solutionsPack & 0x0fff;
-			for (int i = 0; i < min(5, path.nSolution); ++i) {
-				int s = (path.solutionsPack >> (i * 12)) & 0x0fff;
-				int response = solutionClue[g][s];
-				treefile << prefix << guess[g];
-				if (response != 242)
-					treefile << " " << responseToString(response) << std::setw(4) << 1 << "  " << guess[s];
-				treefile << endl;
-			}
-		}
-		else {
-			treefile << prefix
-					<< std::setw(6) << std::fixed << std::setprecision(3) << path.ev << " " << path.maxDepth;
-			for (int i = 0; i < min(5, path.nSolution); ++i) {
-				treefile << " ** " << guess[(path.solutionsPack >> (i * 12)) & 0x0fff];
-			}
-			treefile << std::endl;
-		}
-	}
-	else {
-		for (auto & kv : path.choices) {
-			if (kv.second.nSolution > 0) {
-				std::stringstream ss;
-				ss << prefix << guess[path.guess] << " " << responseToString(kv.first) << std::setw(5) << kv.second.nSolution << "  ";
-				showPath(treefile, ss.str(), kv.second, guess, solutionClue, depth + 1);
-			}
-		}
-		if (path.solutionsPack >= 0) {	// indicates the guess is a solution
-			std::stringstream ss;
-			treefile << prefix << guess[path.guess] << endl;
-		}
-	}
+static void showPath(ofstream &treefile, string const &prefix, Path const &path, vector<string> const &guess, vector<vector<ans_t>> const &solutionClue) {
+//	for (int i = 0; i < path.maxDepth; i++) {
+//		int g = path.solution.front();
+//		int response = solutionClue[g][s];
+//
+//		treefile << prefix << guess[g];
+//			treefile << " " << responseToString(response) << std::setw(4) << 1 << "  " << guess[s];
+//		treefile << "\n";
+//	}
+//
+//	if (path.choices.empty()) {
+//		if (path.maxDepth <= 2 && path.nSolution <= 5 && path.solutionsPack >= 0) {
+//			// expand the compressed path tree
+//			int g = path.solutionsPack & 0x0fff;
+//			for (int i = 0; i < min(5, path.nSolution); ++i) {
+//				int s = (path.solutionsPack >> (i * 12)) & 0x0fff;
+//				int response = solutionClue[g][s];
+//				treefile << prefix << guess[g];
+//				if (response != 242)
+//					treefile << " " << responseToString(response) << std::setw(4) << 1 << "  " << guess[s];
+//				treefile << endl;
+//			}
+//		}
+//		else {
+//			treefile << prefix << std::setw(6) << " " << path.maxDepth;
+//			for (int i = 0; i < min(5, path.nSolution); ++i) {
+//				treefile << " ** " << guess[(path.solutionsPack >> (i * 12)) & 0x0fff];
+//			}
+//			treefile << std::endl;
+//		}
+//	}
+//	else {
+//		for (auto & kv : path.choices) {
+//			if (kv.second.nSolution > 0) {
+//				std::stringstream ss;
+//				ss << prefix << guess[path.guess] << " " << responseToString(kv.first) << std::setw(5) << kv.second.nSolution << "  ";
+//				showPath(treefile, ss.str(), kv.second, guess, solutionClue, depth + 1);
+//			}
+//		}
+//		if (path.solutionsPack >= 0) {	// indicates the guess is a solution
+//			std::stringstream ss;
+//			treefile << prefix << guess[path.guess] << endl;
+//		}
+//	}
 }
 
 static void pushSolutions(vector<int> & sols, Path const & path) {
-	if (path.choices.empty()) {
-		for (int i = 0; i < min(5, path.nSolution); ++i) {
-			sols.push_back((path.solutionsPack >> (i * 12)) & 0x0fff);
-		}
-	}
-	else {
-		if (path.solutionsPack >= 0)	// indicates the guess is a solution
-			sols.push_back(path.guess);
-		for (auto const & kv : path.choices)
-			pushSolutions(sols, kv.second);
-	}
+//	if (path.choices.empty()) {
+//		for (int i = 0; i < min(5, path.nSolution); ++i) {
+//			sols.push_back((path.solutionsPack >> (i * 12)) & 0x0fff);
+//		}
+//	}
+//	else {
+//		if (path.solutionsPack >= 0)	// indicates the guess is a solution
+//			sols.push_back(path.guess);
+//		for (auto const & kv : path.choices)
+//			pushSolutions(sols, kv.second);
+//	}
 }
 
 static void showSolutions(ostream & tableFile, Path const & path, vector<string> const & guess) {
-	vector<int> sols;
-	pushSolutions(sols, path);
-	if (sols.size() != path.nSolution)
-		tableFile << sols.size() << ";";
-	for	(int i = 0; i < int(sols.size()); ++i) {
-		if (i > 0)
-			tableFile << ";";
-		tableFile << guess[sols[i]];
-	}
+//	vector<int> sols;
+//	pushSolutions(sols, path);
+//	if (sols.size() != path.nSolution)
+//		tableFile << sols.size() << ";";
+//	for	(int i = 0; i < int(sols.size()); ++i) {
+//		if (i > 0)
+//			tableFile << ";";
+//		tableFile << guess[sols[i]];
+//	}
 }
-
 
 static void showTable(ostream & tableFile, Path const & path, vector<string> const & guess) {
 	// "first guess,avg guesses,max guesses,first clue,n solutions,second guess,max guesses remaining,solutions"
-	for (int ip = 0; ip < 243; ++ip) {
-		if (path.choices.find(ip) == path.choices.end())
-			continue;	// impossible response -- no solutions
-		Path const & next = path.choices.at(ip);
-		if (next.guess < 0 || next.nSolution == 0) {
-			cout << "empty choice" << path.guess << " " << ip << endl;
-			continue;	// impossible response -- no solutions
-		}
-		tableFile << guess[path.guess] << "," << path.ev << "," << path.maxDepth << ","
-		<< responseToString(ip) << "," << next.nSolution << "," << guess[next.guess] << ","
-		<< (next.nSolution == 1 && next.solutionsPack == next.guess ? 0 : next.maxDepth - 1) << ",";
-		showSolutions(tableFile, next, guess);
-		tableFile << endl;
-	}
+//	for (int ip = 0; ip < 243; ++ip) {
+//		if (path.choices.find(ip) == path.choices.end())
+//			continue;	// impossible response -- no solutions
+//		Path const & next = path.choices.at(ip);
+//		if (next.guess < 0 || next.nSolution == 0) {
+//			cout << "empty choice" << path.guess << " " << ip << endl;
+//			continue;	// impossible response -- no solutions
+//		}
+//		tableFile << guess[path.guess] << "," << path.maxDepth << ","
+//		<< responseToString(ip) << "," << next.nSolution << "," << guess[next.guess] << ","
+//		<< (next.nSolution == 1 && next.solutionsPack == next.guess ? 0 : next.maxDepth - 1) << ",";
+//		showSolutions(tableFile, next, guess);
+//		tableFile << endl;
+//	}
 }
 
-int main() {
-	vector<string> solutions = WordsHandler::solutions();
-	//solution.resize(2315);  // only the first 2315 are used as solutions
-	//vector<string> guess = readWordFile("guesses5.txt");
-	vector<string> guess = WordsHandler::guesses();
-	sort(guess.begin(), guess.end());
-	vector<short> solution;
-	for (auto const & s : solutions) {
+vector<ans_t> getSolutionsId(const vector<string> &solutions, const vector<string> &guess) {
+	vector<ans_t> solution;
+	for (auto const &s : solutions) {
 		auto loc = find(guess.begin(), guess.end(), s);
-//        assert (loc != guess.end());
+
 		if (loc != guess.end())
-			solution.push_back(int(loc - guess.begin()));
+			solution.push_back(ans_t(loc - guess.begin()));
 		else
 			cout << "*** solution not found " << s << endl;
 	}
-	sort(solution.begin(), solution.end());
 
-//    int nWords = int(words.size()); // 12972
-	int nGuess = int(guess.size()); // ~3000
-	int nSolution = int(solution.size());   // other words are allowed as guesses
+	return solution;
+}
 
-	// encode response as 5 base-3 digits, 0 - 3^5, 0 - 243
-	vector<int> place{0, 3, 9, 27, 81, 243};
-	vector<vector<vector<short>>> partitions(nGuess);   // [nguess][243][nsol]
-	vector<vector<short>> solutionClue(nGuess);	// [nguess][nguess] -> clue
-	vector<double> score(nGuess);
+class WordleSolver {
+	const int N;
+	int ANSWER_SIZE; // 3^N
 
-	// build the response partitions for each word
-	// (also compute a score for prioritizing work which is no longer used)
-	auto t0 = std::chrono::system_clock::now();
-	int nThread = std::clamp(int(std::thread::hardware_concurrency()), 2, 32);
-	std::vector<std::thread> threads;
-	for (int it = 0; it < nThread; ++it) {
-		threads.emplace_back([it, nGuess, nThread, nSolution, &guess, &solution, &partitions, &solutionClue, &score]() {
-			for (int ig = it * nGuess / nThread; ig < (it + 1) * nGuess / nThread; ++ig) {
-				partitions[ig].resize(243);
-				solutionClue[ig].resize(nGuess);
-				for (short is = 0; is < nSolution; ++is) {
-					int response = getResponse(guess[ig], guess[solution[is]]);
-					partitions[ig][response].push_back(solution[is]);
-					solutionClue[ig][solution[is]] = response;
-				}
-				double s = 0;
-				for (int ip = 0; ip < 243; ++ip) {
-					double hits = sqrt(ip % 3) + sqrt(ip/3 % 3) + sqrt(ip/9 % 3) + sqrt(ip/27 % 3) + sqrt(ip/81 % 3);
-					double weight = hits == 0 ? 5.0 : hits == 1 ? 3.0 : hits < 2 ? 2.5 : hits == 2 ? 2.0 : hits < 3 ? 1.7 : 1.0;
-					double ps = int(partitions[ig][ip].size()) / weight;
-					if (ps > s)
-						s = ps;
-				}
-				score[ig] = s;
-			}
-		} );
+public:
+	WordleSolver(int N) : N(N) {
+		ANSWER_SIZE = 1;
+		for (int i = 0; i < N; i++)
+			ANSWER_SIZE *= 3;
+
+		array<int, 5> arr;
 	}
-	for (auto & t : threads)
-		t.join();
-	cout << std::fixed << std::setprecision(3) << "build time " << " " << since(t0) << endl;
 
-	vector<int> index(nGuess);
-	std::iota(index.begin(), index.end(), 0);
-	std::sort(index.begin(), index.end(), [&](int a, int b) { return score[a] < score[b];});
+	void solve(vector<string> &solutions, vector<string> guess) {
+		vector<ans_t> solution_ids = getSolutionsId(solutions, guess);
 
-	// most promising start words? -- no longer used
-	for (int i = 0; i < 10; ++i) {
-		int iw = index[i];
-		//cout << std::right << std::setw(4) << score[iw] << " " << words[iw] << endl;
-		cout << std::fixed << std::setprecision(3) << score[iw] << " " << guess[iw] << endl;
-	}
-	cout << endl;
+		int nGuess = int(guess.size()); // 3624
+		int nSolution = int(solution_ids.size()); // 2315   // other words are allowed as guesses
+
+		vector<vector<vector<ans_t>>> partitions(nGuess);   // [nguess][243][nsol]
+		vector<vector<ans_t>> solutionClue(nGuess);	// [nguess][nguess] -> clue
+//		int nThread = clamp(int(thread::hardware_concurrency()), 2, 32);
+		int nThread = clamp(int(thread::hardware_concurrency()), 1, 1); //TODO zwiększyć
+
+		solve_clues(guess, solution_ids, nGuess, nSolution, partitions, solutionClue, nThread);
+
+		vector<int> index(nGuess);
+		std::iota(index.begin(), index.end(), 0);
+
 
 #if 0
-	// use this branch to try out a few specific words
+		// use this branch to try out a few specific words
 	//vector<string> favWords{"trend", "begin", "route", "stein", "first", "clout", "trunk", "clone", "raise", "trend", "intro", "inert", "tinge", "avoid", "adieu"};
 	//vector<string> favWords{"shush", "yummy", "mamma", "mummy", "vivid", "puppy"};
 	vector<string> favWords{"shush", "yummy", "mummy"};	// 6
@@ -555,95 +393,136 @@ int main() {
 		favs.push_back(int(std::find(guess.begin(), guess.end(), s) - guess.begin()));
 	}
 #else
-	vector<int> favs;
-	for (int i = 0; i < nGuess; ++i) {
-		//int iw = index[i];	// in score order
-		favs.push_back(i);
-	}
+		vector<int> favs = index;
 #endif
-	vector<int> favMax(favs.size());
-	vector<double> favEV(favs.size());
+		vector<Path> favResults(favs.size());
+		explore(guess, solution_ids, solutionClue, nThread, favs, favResults);
 
-	std::vector<stringstream> wordstreams(favs.size());
-	std::vector<stringstream> summstreams(nThread);
-	std::vector<std::thread> ethreads;
-	std::atomic<int> next = 0;
-	std::atomic<int> nDone = 0;
-	std::atomic<int> nTogo = int(favs.size());
-	auto te0 = std::chrono::system_clock::now();
-	for (int it = 0; it < nThread; ++it) {
-		ethreads.emplace_back([it, nThread, nSolution, te0, &nTogo, &nDone, &next, &favs, &guess, &solution, &partitions, &solutionClue, &score, &favMax, &favEV, &summstreams, &wordstreams]() {
-			int nFav = int(favs.size());
-			for (int ifav = next++; ifav < nFav; ifav = next++) {
-				Path path;
-				int pass = 0;
-				auto tf = std::chrono::system_clock::now();
-				for (; pass < 5; pass++) {
-					auto tf0 = std::chrono::system_clock::now();
-					if (pass > 0)
-						nTogo++;
-					path = exploreGuess(solution, favs[ifav], solutionClue, guess, array<int, 5>(), 999, pass, false, 0);
-					favMax[ifav] = path.maxDepth;
-					favEV[ifav] = path.ev;
-					if (path.guess != favs[ifav]) {
-						cout << "unexpected guess " << path.guess << " " << favs[ifav] << endl;
-						cout.flush();
-					}
-					nDone++;
-					
-					double dt = since(te0);
-					double done = double(nDone) / nTogo;	// these two atomics could be fetched out of sync but no big deal
-					double rem = dt / done - dt;
-					stringstream ss;
-					ss << setw(3) << it << " " << setw(3) << min(4, pass) << " " << setw(4) << ifav << "  " << guess[favs[ifav]] << "  "
-					<< std::fixed << std::setprecision(5) << favEV[ifav] << std::right << std::setw(6) << favMax[ifav] << " "
-					<< setw(7) << std::setprecision(2) << since(tf0)/60 << " min     "
-					<< setw(5) << std::setprecision(1) << done * 100 << "% done  "
-					<< setw(5) << std::setprecision(0) << rem/60 << " min to go"<< endl;
-					cout << ss.str();
-					
-					// *** "results" directory needs to already exist ***
-					
-					// the entire decision tree for this starting word
-					ofstream treefile;
-					treefile.open(std::filesystem::path(string("results/tree ")
-														+ (path.maxDepth > 5 && pass < 4 ? (std::to_string(pass) + " ") : string(""))
-														+ guess[favs[ifav]] + ".txt"));
-					showPath(treefile, "", path, guess, solutionClue);
-					treefile.close();
-					
-					if (path.maxDepth <= 5)
-						break;	// good enough
-				}
+		for (int ifav = 0; ifav < int(favs.size()); ++ifav) {
+			cout << guess[favs[ifav]] << " " << std::right << std::setw(6) << favResults[ifav].maxDepth << endl;
+		}
 
-				showTable(wordstreams[ifav], path, guess);
-				
-				summstreams[it] << guess[favs[ifav]] << "," << std::fixed << std::setprecision(5) << path.ev << "," << path.maxDepth << "," << pass << "," << since(tf) << endl;
+		write_worst_paths_to_file(guess, favResults);
+
+//		ofstream twoDeepFile;
+//		twoDeepFile.open(std::filesystem::path(string("../results/summary_two-deep.csv")));
+//		twoDeepFile << "first guess,avg guesses,max guesses,first clue,n solutions,second guess,max guesses remaining,solutions" << endl;
+//		for (auto & s : wordstreams) {
+//			twoDeepFile << s.str();
+//		}
+//		twoDeepFile.close();
+
+		cout << endl;
+	}
+
+private:
+	void write_worst_paths_to_file(vector<string> &guess, vector<Path> &favResults) {
+		ofstream summFile;
+
+		summFile.open(std::filesystem::path(string("../results/summary_ev.csv")));
+		summFile << "guess,max guesses,solution\n";
+		for (int i = 0; i < (int)favResults.size(); i++) {
+			summFile << guess[i] << "," << favResults[i].maxDepth << ",";
+
+			for (int j = (int)favResults[i].solution.size() - 1; j >= 0; j--) {
+				summFile << guess[ favResults[i].solution[j] ];
+
+				if (j != 0)
+					summFile << " ";
 			}
-		} );
-	}
-	for (auto & t : ethreads)
-		t.join();
-	for (int ifav = 0; ifav < int(favs.size()); ++ifav) {
-		cout << guess[favs[ifav]] << " " << std::fixed << std::setw(6) << std::setprecision(3) << favEV[ifav] << std::right << std::setw(6) << favMax[ifav] << endl;
-	}
-	
-	ofstream summFile;
-	summFile.open(std::filesystem::path(string("results/summary ev.csv")));
-	summFile << "guess" << "," << "ev" << "," << "max guesses" << "," << "pass" << "," << "time" << endl;
-	for (auto & s : summstreams) {
-		summFile << s.str();
-	}
-	summFile.close();
 
-	ofstream twoDeepFile;
-	twoDeepFile.open(std::filesystem::path(string("results/summary two-deep.csv")));
-	twoDeepFile << "first guess,avg guesses,max guesses,first clue,n solutions,second guess,max guesses remaining,solutions" << endl;
-	for (auto & s : wordstreams) {
-		twoDeepFile << s.str();
+			summFile << "\n";
+		}
+		summFile.close();
 	}
-	twoDeepFile.close();
 
-	cout << endl;
+	void explore(const vector<string> &guess, const vector<ans_t> &solution_ids, const vector<vector<ans_t>> &solutionClue,
+			int nThread, const vector<int> &favs, vector<Path> &favResults) const {
+		vector<thread> ethreads;
+		atomic<int> next = 0;
+		atomic<int> nDone = 0;
+		int nFav = int(favs.size());
+		auto te0 = std::chrono::system_clock::now();
+
+		cout << "  wątek  id  słowo      max\n";
+
+		for (int it = 0; it < nThread; ++it) {
+			ethreads.emplace_back([this, it, te0, &nFav, &nDone, &next, &favs, &guess, &solution_ids, &solutionClue, &favResults]() {
+				for (int ifav = next++; ifav < nFav; ifav = next++) {
+					auto tf0 = std::chrono::system_clock::now();
+
+					favResults[ifav] = exploreGuess(solution_ids, favs[ifav], solutionClue, guess, array<int, 5>());
+					nDone++;
+
+					double dt = since(te0);
+					double done = double(nDone) / nFav;	// these two atomics could be fetched out of sync but no big deal
+					double rem = dt / done - dt;
+
+					cout << setw(5) << it << " " << " " << setw(4) << ifav << "  " << guess[favs[ifav]] << "  "
+						 << fixed << right << setw(6) << favResults[ifav].maxDepth << " "
+						 << setw(7) << setprecision(2) << since(tf0)/60 << " min     "
+						 << setw(5) << setprecision(1) << done * 100 << "% done  "
+						 << setw(5) << setprecision(0) << rem/60 << " min to go" << endl;
+
+					// *** "results" directory needs to already exist ***
+
+					// the entire decision tree for this starting word
+//					ofstream treefile;
+//					treefile.open(std::filesystem::path(string("results/tree ") + guess[favs[ifav]] + ".txt"));
+//					showPath(treefile, "", path, guess, solutionClue);
+//					treefile.close();
+
+//					showTable(wordstreams[ifav], path, guess);
+//
+//					summstreams[it] << guess[favs[ifav]] << "," << fixed << "," << path.maxDepth << "," << since(tf) << endl;
+				}
+			} );
+		}
+		for (auto & t : ethreads)
+			t.join();
+	}
+
+	void solve_clues(const vector<string> &guess, const vector<ans_t> &solution_ids, int nGuess, int nSolution,
+					 vector<vector<vector<ans_t>>> &partitions, vector<vector<ans_t>> &solutionClue,
+					 const int &nThread) {
+		auto t0 = std::chrono::system_clock::now();
+		vector<thread> threads;
+
+		for (int it = 0; it < nThread; ++it) {
+			threads.emplace_back([this, it, nGuess, nThread, nSolution, &guess, &solution_ids, &partitions, &solutionClue]() {
+				for (int ig = it * nGuess / nThread; ig < (it + 1) * nGuess / nThread; ++ig) {
+					partitions[ig].resize(ANSWER_SIZE);
+					solutionClue[ig].resize(nGuess);
+					for (ans_t is = 0; is < nSolution; ++is) {
+						ans_t response = getResponse(guess[ig], guess[solution_ids[is]]);
+						partitions[ig][response].push_back(solution_ids[is]);
+						solutionClue[ig][solution_ids[is]] = response;
+					}
+				}
+			} );
+		}
+		for (auto & t : threads)
+			t.join();
+		cout << fixed << setprecision(3) << "solve_clues time " << " " << since(t0) << endl;
+	}
+};
+
+
+
+int main() {
+	vector<string> solutions = WordsHandler::solutions();
+	solutions.resize(30);  // only the first 2315 are used as solutions
+	//vector<string> guess = readWordFile("guesses5.txt");
+	vector<string> guess = WordsHandler::guesses();
+
+//	solutions = {"aaaaa", "baaaa", "caaaa", "daaaa", "eaaaa",// "faaaa", "gaaaa", "haaaa", "iaaaa", "jaaaa", "kaaaa"
+//				"abbaa", "accaa", "acbaa", "abcaa", "addaa", "adcaa", "adbaa", "acdaa", "abdaa"
+//	};
+	sort(solutions.begin(), solutions.end());
+	guess = solutions;
+	auto solver = WordleSolver(5);
+
+	solver.solve(solutions, guess);
+
 	return 0;
 }

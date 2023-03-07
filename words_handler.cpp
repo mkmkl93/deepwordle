@@ -24,5 +24,6 @@ vector<string> WordsHandler::readWordFile(string const & fn) {
 		words.push_back(w);
 	}
 	wordFile.close();
+
 	return words;
 }
