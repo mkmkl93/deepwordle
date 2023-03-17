@@ -1,15 +1,21 @@
 #include "response.h"
 
-Response::Response(int c) {
-	int m = (int)pow(3, WORD_SIZE - 1);
-	for (int i = 0; i < WORD_SIZE; i++) {
-		code[i] = (c / m) % 3;
-		m /= 3;
+Response::Response(size_t size, int n) {
+	code.resize(size);
+
+	for (char &c : code) {
+		c = n % 3;
+		n /= 3;
 	}
 }
 
-Response::Response(string s) {
-	for(int i = 0; i < WORD_SIZE; i++) {
-		code[i] = s[i] - '0';
+Response::operator int() {
+	int ret = 0;
+
+	for (char &c : code) {
+		ret *= 3;
+		ret += c - '0';
 	}
+
+	return ret;
 }

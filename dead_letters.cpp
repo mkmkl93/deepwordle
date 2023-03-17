@@ -14,10 +14,10 @@ void DeadLetters::addResponse(string w, Response r) {
 
 	vector<char> v_known;
 
-	for (int i = 0; i < WORD_SIZE; i++) {
+	for (int i = 0; i < word_size; i++) {
 		if (code[i] == 0) {
 			bool hasMultiple = false, allOtherCorrect = true, allOtherFalse = true;
-			for (int j = 0; j < WORD_SIZE; ++j) {
+			for (int j = 0; j < word_size; ++j) {
 				if (i != j && w[i] == w[j]) {
 					hasMultiple = true;
 					allOtherCorrect &= code[j] == 2;
@@ -27,7 +27,7 @@ void DeadLetters::addResponse(string w, Response r) {
 			if (hasMultiple) {
 				// TODO błąd w głównej pracy
 				if (allOtherCorrect) {
-					for (int j = 0; j < WORD_SIZE; j++) {
+					for (int j = 0; j < word_size; j++) {
 						if (w[j] != w[i] || code[j] == 0) {
 							killOne(j, w[i]);
 						}
@@ -88,7 +88,9 @@ void DeadLetters::unionKnown(vector<char> v_known) {
 }
 
 bool DeadLetters::matches(string s) {
-	for (int i = 0; i < WORD_SIZE; i++) {
+	assert(word_size == s.size());
+
+	for (int i = 0; i < word_size; i++) {
 		if (dead[i][s[i] - 'a'])
 			return false;
 	}
@@ -96,7 +98,7 @@ bool DeadLetters::matches(string s) {
 	sort(s.begin(), s.end());
 
 	int j = 0;
-	for (int i = 0; i < WORD_SIZE; i++) {
+	for (int i = 0; i < word_size; i++) {
 		if (j < known.size() && s[i] == known[j])
 			j++;
 	}

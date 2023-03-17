@@ -5,17 +5,16 @@
 
 using namespace std;
 
-const int ALPHABET_SIZE = 26;
-const int WORD_SIZE = 5;
-
 struct Response {
-	array<int, WORD_SIZE> code;
+	string code;
 
-	Response() {};
+	Response() = default;
 
-	Response(int c);
+	Response(size_t size, int n);
 
-	Response(string s);
+	Response(string s) : code(s) {};
+
+	operator int();
 };
 
 #endif //WORDLE_RESPONSE_H

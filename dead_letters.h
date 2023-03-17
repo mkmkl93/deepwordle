@@ -6,6 +6,7 @@
 #define WORDLE_DEAD_LETTERS_H
 
 #include <bitset>
+#include <cassert>
 #include "response.h"
 #include <cstring>
 
@@ -14,8 +15,9 @@ using namespace std;
 struct DeadLetters {
 	vector< bitset<26> > dead;
 	vector<char> known;
+	int word_size;
 
-	DeadLetters() { dead.resize(WORD_SIZE); };
+	DeadLetters(size_t n) : word_size(n) { dead.resize(n); };
 
 	void killOne(int i, char letter);
 
