@@ -3,8 +3,8 @@
 Response::Response(size_t size, int n) {
 	code.resize(size);
 
-	for (char &c : code) {
-		c = n % 3;
+	for (int i = size - 1; i >= 0; i--) {
+		code[i] = n % 3 + '0';
 		n /= 3;
 	}
 }
@@ -18,4 +18,14 @@ Response::operator int() {
 	}
 
 	return ret;
+}
+
+string Response::pretty_string() {
+	vector<string> color{"⬜", "\xF0\x9F\x9F\xA8", "\xF0\x9F\x9F\xA9"};
+	string s;
+
+	for(char &c : code)
+		s += color[c - '0'];
+
+	return s;
 }

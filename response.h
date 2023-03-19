@@ -15,6 +15,8 @@ struct Response {
 	Response(string s) : code(s) {};
 
 	operator int();
+
+	string pretty_string();
 };
 
 #endif //WORDLE_RESPONSE_H

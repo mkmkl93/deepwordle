@@ -13,11 +13,18 @@
 #include "dead_letters.h"
 #include "utils.h"
 
-const int UNSOLVABLE = 999;
+const int UNSOLVABLE = 9999;
 
 struct Path {
+	int guess;
+	size_t nsol;
+
 	int maxDepth = UNSOLVABLE;	// worst case number of guesses, including this guess
-	vector<int> solution;
+	vector<Path> nextPath;
+
+	Path() = default;
+
+	Path(size_t n) { nextPath.resize(n); }
 
 	bool operator<=>(const Path&) const = default;
 };
@@ -60,6 +67,12 @@ private:
 	int splitIntoPartsMax(vector<int> &solutions, vector<Response> &solutionClue);
 
 	void write_worst_paths_to_file(vector<string> &guess, vector<Path> &favResults);
+
+	void showPaths(Path path, vector<string> &guess);
+
+	void showP(ofstream &f, string prefix, Path path, vector<string> &guess);
+
+	string responseToString(int r);
 };
 
 #endif //WORDLE_DEEP_SOLVER_H

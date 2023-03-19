@@ -1,7 +1,3 @@
-//
-// Created by michal on 16.03.23.
-//
-
 #include "deep_solver.h"
 
 void DeepSolver::solve(vector<string> &solutions, vector<string> guess) {
@@ -32,19 +28,11 @@ void DeepSolver::solve(vector<string> &solutions, vector<string> guess) {
 
 	for (int ifav = 0; ifav < int(favs.size()); ++ifav) {
 		cout << guess[favs[ifav]] << " " << right << setw(6) << favResults[ifav].maxDepth << endl;
+		showPaths(favResults[ifav], guess);
 	}
-
-//		cout << mapa.size() << " " << map_id << "\wordSize";
 
 	write_worst_paths_to_file(guess, favResults);
 
-//		ofstream twoDeepFile;
-//		twoDeepFile.open(std::filesystem::path(string("../results/summary_two-deep.csv")));
-//		twoDeepFile << "first guess,avg guesses,max guesses,first clue,wordSize solutions,second guess,max guesses remaining,solutions" << endl;
-//		for (auto & s : wordstreams) {
-//			twoDeepFile << s.str();
-//		}
-//		twoDeepFile.close();
 
 	cout << endl;
 }
@@ -76,7 +64,9 @@ void DeepSolver::solve_clues(const vector<string> &guess, const vector<int> &sol
 
 Path DeepSolver::exploreGuess(vector<int> &solution, int g, vector<vector<Response>> &solutionClue, vector<string> &guess,
 							  DeadLetters &dl) {
-	Path result;
+	Path result(answerSize);
+	result.nsol = solution.size();
+
 	int nGuess = int(guess.size());
 
 	// Jakie hasła by dostały konkretną odpowiedź gdybyśmy zapytali o słowo o indeksie g
@@ -100,75 +90,65 @@ Path DeepSolver::exploreGuess(vector<int> &solution, int g, vector<vector<Respon
 
 		// Liczba pasujących haseł, jeżeli dostaniemy odpowiedź `ip`
 		int nipSol = int(sols.size());
-		Path best;
+		Path best(answerSize);
+		best.nsol = nipSol;
 		// Jest tylko jedna możliwa odpowiedź ale nie jest to słowo `g`, bo nie dostaliśmy odpowiedzi 242
+		// TODO szybkie rozwiązanie dla nipSol == 2
+
 		if (nipSol == 1) {
-			best.maxDepth = 1;
-			best.solution.emplace_back(sols[0]);
-		} else if (nipSol == 2) {
-			// Mamy dwie możliwość, więc no lepiej się nie da
-			best.maxDepth = 2;
-			best.solution.emplace_back(sols[1]);
-			best.solution.emplace_back(sols[0]);
+			if (ip != answerSize - 1) {
+				best.maxDepth = 1;
+				best.guess = sols[0];
+
+				Path next(answerSize);
+				next.nsol = 1;
+				next.guess = sols[0];
+				next.maxDepth = 0;
+
+				best.nextPath[answerSize - 1] = next;
+			} else {
+				best.nsol = 1;
+				best.maxDepth = 0;
+				best.guess = sols[0];
+			}
 		} else {
 			// TODO posortować po maksymalnym poddrzewie zapytania
 			// Nowy stan martwych liter, jeżeli zgadujemy hasło `guess[g]`, dostaliśmy odpowiedź `ip` i początkowo mieliśmy stan `deadLetters`
-
-			vector<pair<int, int>> maxPart;
-			for (int ig = 0; ig < nGuess; ++ig) {
-				maxPart.emplace_back(int(splitIntoPartsMax(sols, solutionClue[ig])), int(ig));
-			}
-			sort(maxPart.begin(), maxPart.end());
-
 			DeadLetters dl2 = dl;
 			dl2.addResponse(guess[g], Response(wordSize, ip));
 
 			best.maxDepth = UNSOLVABLE;
-//			best = exploreGuess(sols, maxPart[0].second, solutionClue, guess, dl2, best.maxDepth - 1, true);
 
 			for (int i = 0; i < nGuess; ++i) {
-				if (maxPart[i].second != maxPart[0].second)
-					break;
-				Path p = exploreGuess(sols, maxPart[i].second, solutionClue, guess, dl2);
-
-//				Path p = exploreGuess(sols, i, solutionClue, guess, dl2, best.maxDepth - 1, true);
+				Path p = exploreGuess(sols, i, solutionClue, guess, dl2);
 
 				if (p.maxDepth < best.maxDepth)
 					best = p;
-
-				break;
 			}
 		}
 
+		result.nextPath[ip] = best;
+
 		if (best.maxDepth > result.maxDepth || result.maxDepth == UNSOLVABLE)
-			result = best;
+			result.maxDepth = best.maxDepth;
 	}
 
-	result.solution.emplace_back(g);
-	result.maxDepth += 1;
+	result.guess = g;
+	result.maxDepth++;
 
 	return result;
 }
 
 void DeepSolver::write_worst_paths_to_file(vector<string> &guess, vector<Path> &favResults) {
-	ofstream summFile;
+	ofstream file;
 
-	summFile.open(filesystem::path(string("../results/summary_ev.csv")));
-	summFile << "guess,max guesses,solution\n";
+	file.open(filesystem::path(string("../results/summary_ev.csv")));
+	file << "guess,max guesses\n";
 	for (int i = 0; i < (int)favResults.size(); i++) {
-		summFile << guess[i] << "," << favResults[i].maxDepth << ",";
-
-		for (int j = (int)favResults[i].solution.size() - 1; j >= 0; j--) {
-			summFile << guess[ favResults[i].solution[j] ];
-
-			if (j != 0)
-				summFile << " ";
-		}
-
-		summFile << "\n";
+		file << guess[i] << "," << favResults[i].maxDepth << "\n";
 	}
 
-	summFile.close();
+	file.close();
 }
 
 void DeepSolver::explore(vector<string> &guess, vector<int> &solution_ids, vector<vector<Response>> &solutionClue,
@@ -207,7 +187,7 @@ void DeepSolver::explore(vector<string> &guess, vector<int> &solution_ids, vecto
 				// the entire decision tree for this starting word
 //					ofstream treefile;
 //					treefile.open(std::filesystem::path(string("results/tree ") + guess[favs[ifav]] + ".txt"));
-//					showPath(treefile, "", path, guess, solutionClue);
+//					showPaths(treefile, "", path, guess, solutionClue);
 //					treefile.close();
 
 //					showTable(wordstreams[ifav], path, guess);
@@ -246,4 +226,30 @@ int DeepSolver::splitIntoPartsMax(vector<int> &solutions, vector<Response> &solu
 	vector<int> count = splitIntoPartsCount(solutions, solutionClue);
 
 	return *max_element(count.begin(), count.end());
+}
+
+void DeepSolver::showPaths(Path path, vector<string> &guess) {
+	ofstream file;
+
+	file.open(filesystem::path("../results/tree/tree_" + guess[path.guess]));
+
+	showP(file, "", path, guess);
+
+	file.close();
+}
+
+void DeepSolver::showP(ofstream &f, string prefix, Path path, vector<string> &guess) {
+	for (int i = 0; i < answerSize; i++) {
+		Path &p = path.nextPath[i];
+
+		if (i == answerSize - 1 && p.nsol >= 1) {
+			string pre = prefix + guess[path.guess] + " " + Response(wordSize, i).pretty_string() + " " + to_string(p.nsol);
+			f << pre << "\n";
+		}
+
+		if (p.nsol >= 1 && i != answerSize - 1) {
+			string pre = prefix + guess[path.guess] + " " + Response(wordSize, i).pretty_string() + " " + to_string(p.nsol) + " -> ";
+			showP(f, pre, p, guess);
+		}
+	}
 }
