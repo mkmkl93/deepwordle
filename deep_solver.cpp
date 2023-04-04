@@ -1,6 +1,6 @@
 #include "deep_solver.h"
 
-void DeepSolver::solve(vector<string> &solutions, vector<string> guess) {
+vector<Path> DeepSolver::solve(vector<string> &guess, vector<string> &solutions) {
 	wordSize = solutions[0].size();
 	answerSize = 1;
 	for (int i = 0; i < wordSize; i++)
@@ -19,11 +19,60 @@ void DeepSolver::solve(vector<string> &solutions, vector<string> guess) {
 
 	solve_clues(guess, solution_ids, nGuess, nSolution, partitions, solutionClue, nThread);
 
+
+	vector<string> dividers = {"abbey", "abbot", "adobe", "alibi", "amaze", "azure", "bezel", "bible", "blaze", "blitz", "blurb", "bobby", "booby", "booze", "boozy", "bribe", "cabby", "craze", "crazy", "derby", "dizzy", "doubt", "dozen", "fizzy", "fritz", "froze", "fuzzy", "gauze", "gazer", "glaze", "globe", "graze", "gumbo", "hazel", "hobby", "jazzy", "jumbo", "kebab", "limbo", "lobby", "maize", "mambo", "maybe", "ozone", "pizza", "plaza", "prize", "probe", "rabbi", "razor", "rugby", "rumba", "scuba", "seize", "tabby", "topaz", "tribe", "turbo", "unzip", "waltz", "woozy", "zebra", "zesty", "zonal"};
+
+	int id = lower_bound(solutions.begin(), solutions.end(), "adobe") - solutions.begin();
+	auto v = splitIntoPartsCount(solution_ids, solutionClue[id]);
+	solution_ids = splitIntoParts(solution_ids, solutionClue[id])[0];
+
+	cout << solution_ids.size() << "\n";
+	vector<pair<int, int>> maxPart;
+	for (int ig = 0; ig < nGuess; ++ig) {
+		maxPart.emplace_back(splitIntoPartsMax(solution_ids, solutionClue[ig]), ig);
+	}
+
+	sort(maxPart.begin(), maxPart.end());
+	cout << maxPart[0].first << " " << maxPart[0].second << " " << guess[maxPart[0].second] << "\n";
+
+
+
+	v = splitIntoPartsCount(solution_ids, solutionClue[maxPart[0].second]);
+	cout << max_element(v.begin(), v.end()) - v.begin() << "\n";
+	solution_ids = splitIntoParts(solution_ids, solutionClue[maxPart[0].second])[56];
+
+	cout << solution_ids.size() << "\n";
+	maxPart.clear();
+	for (int ig = 0; ig < nGuess; ++ig) {
+		maxPart.emplace_back(splitIntoPartsMax(solution_ids, solutionClue[ig]), ig);
+	}
+
+	sort(maxPart.begin(), maxPart.end());
+	cout << maxPart[0].first << " " << maxPart[0].second << " " << guess[maxPart[0].second] << "\n";
+
+
+
+	v = splitIntoPartsCount(solution_ids, solutionClue[maxPart[0].second]);
+	cout << *max_element(v.begin(), v.end()) << " " << max_element(v.begin(), v.end()) - v.begin() << "\n";
+	solution_ids = splitIntoParts(solution_ids, solutionClue[maxPart[0].second])[0];
+
+	cout << solution_ids.size() << "\n";
+	maxPart.clear();
+	for (int ig = 0; ig < nGuess; ++ig) {
+		maxPart.emplace_back(splitIntoPartsMax(solution_ids, solutionClue[ig]), ig);
+	}
+
+	sort(maxPart.begin(), maxPart.end());
+	cout << maxPart[0].first << " " << maxPart[0].second << " " << guess[maxPart[0].second] << "\n";
+
+
+
 	vector<int> index(nGuess);
 	iota(index.begin(), index.end(), 0);
 
 	vector<int> favs = index;
 	vector<Path> favResults(favs.size());
+	return favResults;
 	explore(guess, solution_ids, solutionClue, nThread, favs, favResults);
 
 	for (int ifav = 0; ifav < int(favs.size()); ++ifav) {
@@ -33,8 +82,9 @@ void DeepSolver::solve(vector<string> &solutions, vector<string> guess) {
 
 	write_worst_paths_to_file(guess, favResults);
 
-
 	cout << endl;
+
+	return favResults;
 }
 
 void DeepSolver::solve_clues(const vector<string> &guess, const vector<int> &solution_ids, int nGuess, int nSolution,

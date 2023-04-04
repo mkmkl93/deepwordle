@@ -1,7 +1,3 @@
-//
-// Created by michal on 16.03.23.
-//
-
 #ifndef WORDLE_DEEP_SOLVER_H
 #define WORDLE_DEEP_SOLVER_H
 
@@ -19,7 +15,7 @@ struct Path {
 	int guess;
 	size_t nsol;
 
-	int maxDepth = UNSOLVABLE;	// worst case number of guesses, including this guess
+	int maxDepth = UNSOLVABLE;
 	vector<Path> nextPath;
 
 	Path() = default;
@@ -31,9 +27,9 @@ struct Path {
 
 class DeepSolver {
 public:
-	void solve(vector<string> &solutions, vector<string> guess);
+	vector<Path> solve(vector<string> &guess, vector<string> &solutions);
 
-private:
+protected:
 	size_t wordSize;
 	size_t answerSize; // 3^wordSize
 
@@ -52,7 +48,7 @@ private:
 	 * deadLetters - które litery na jakiej pozycji są dozwolone
 	 * depthToBeat - głębokość do pokonania
 	 */
-	Path exploreGuess(vector<int> &solution, int g, vector<vector<Response>> &solutionClue, vector<string> &guess,
+	virtual Path exploreGuess(vector<int> &solution, int g, vector<vector<Response>> &solutionClue, vector<string> &guess,
 					  DeadLetters &dl);
 
 	// given a list of possible solutions and the solutionClue data for a specific guess word,
