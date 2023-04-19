@@ -4,6 +4,7 @@
 #include "deep_solver.h"
 #include "xen_solver.h"
 #include "greedy_solver.h"
+#include "static_solver.h"
 
 int main() {
 	vector<string> solutions = WordsHandler::solutions();
@@ -25,10 +26,22 @@ int main() {
 	DeepSolver deepSolver = DeepSolver();
 //	deepSolver.solve(guess, solutions);
 
-	GreedySolver greedySolver = GreedySolver();
-	greedySolver.solve(guess, solutions);
+//	GreedySolver greedySolver = GreedySolver();
+//	greedySolver.solve(guess, solutions);
+
+//	StaticSolver staticSolver = StaticSolver();
+//	staticSolver.solve(guess, solutions);
+
+	StaticSolver2 staticSolver2 = StaticSolver2();
+	staticSolver2.solve(guess, solutions);
+
 
 	return 0;
 }
 
 // TODO zobaczyć jakie słowa są rozdzielane przez względnie mało pytań
+
+/*
+ *
+ *
+ */
