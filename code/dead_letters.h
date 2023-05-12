@@ -30,6 +30,10 @@ struct DeadLetters {
 	bool matches(string s);
 
 	bool operator<(const DeadLetters& dl) const;
+
+	int green_letters() const;
+
+	int yellow_letters() const;
 };
 
 #endif //WORDLE_DEAD_LETTERS_H

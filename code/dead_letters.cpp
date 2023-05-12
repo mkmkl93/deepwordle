@@ -117,3 +117,20 @@ bool DeadLetters::operator<(const DeadLetters &dl) const {
 
 	return known < dl.known;
 }
+
+int DeadLetters::green_letters() const {
+	int res = 0;
+
+	for (int i = 0; i < word_size; i++) {
+		if (dead[i].count() == 25)
+			res++;
+	}
+
+	return res;
+}
+
+int DeadLetters::yellow_letters() const {
+	return known.size() - green_letters();
+}
+
+

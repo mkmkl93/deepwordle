@@ -51,3 +51,4 @@ double timeDiff(const chrono::time_point<chrono::system_clock> &t0, const chrono
 double since(const std::chrono::time_point<std::chrono::system_clock> &t0) {
 	return timeDiff(t0, std::chrono::system_clock::now());
 }
+

@@ -29,12 +29,18 @@ int main() {
 //	GreedySolver greedySolver = GreedySolver();
 //	greedySolver.solve(guess, solutions);
 
-//	StaticSolver staticSolver = StaticSolver();
-//	staticSolver.solve(guess, solutions);
 
-	StaticSolver2 staticSolver2 = StaticSolver2();
-	staticSolver2.solve(guess, solutions);
+	StaticSolver staticSolver = StaticSolver(guess, solutions);
+//	staticSolver.solve();
 
+	staticSolver.showPartition({"fritz", "gawky", "jumbo", "spend"});
+	staticSolver.showPartition({"fritz", "gawky", "jumbo", "spend", "chill", "revue", "robot"});
+	staticSolver.showPartition({"blown", "jumpy", "shack", "fritz", "digit", "rover", "robot"});
+	staticSolver.showPartition({"gawky", "spend", "jumbo", "fritz", "chill", "verge", "robot"});
+	staticSolver.showPartition({"gawky", "spend", "jumbo", "fritz", "chill", "river", "robot"});
+	staticSolver.showPartition({"frown", "jumpy", "shack", "blitz", "digit", "rover", "robot"});
+	staticSolver.showPartition({"jumpy", "black", "shown", "fritz", "digit", "rover", "robot"});
+	staticSolver.showPartition({"morph", "clank", "judge", "swift", "boozy", "river", "robot"});
 
 	return 0;
 }

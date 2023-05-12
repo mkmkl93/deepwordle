@@ -23,6 +23,6 @@ Response getResponse(string guess, string solution);
 
 double timeDiff(const chrono::time_point<chrono::system_clock> &t0, const chrono::time_point<chrono::system_clock> &t1);
 
-double since(const chrono::time_point<chrono::system_clock> &t0);
+double since(const chrono::time_point<std::chrono::system_clock> &t0);
 
 #endif //WORDLE_UTILS_H

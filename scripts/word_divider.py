@@ -1,6 +1,8 @@
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib
+import bisect
 from tqdm import tqdm
 
 words_filename = '../wordle solutions sorted.txt'
@@ -62,10 +64,35 @@ def calculate_differences():
 
 
 def save_heatmap():
-    sns.set(rc={'figure.figsize': (25, 20)})
-    sns.heatmap(differences)
+    ax = sns.heatmap(differences[450:651, 450:651], cbar_kws={'label': 'number of differentiating words'})
+    ax.set(xticks=np.arange(0, 201, 50), xticklabels=np.arange(450, 651, 50))
+    ax.set(yticks=np.arange(0, 201, 50), yticklabels=np.arange(450, 651, 50))
+    plt.savefig('zoom300.png')
+    plt.clf()
 
-    plt.savefig('image.png', dpi=1000)
+    ####
+
+    ax = sns.heatmap(differences[450:650, 450:650], cbar_kws={'label': 'number of differentiating words'})
+    ax.set(xticks=np.arange(0, 201, 50), xticklabels=np.arange(450, 651, 50))
+    ax.set(yticks=np.arange(0, 201, 50), yticklabels=np.arange(450, 651, 50))
+    plt.axvline(62, 0, 200, c="blue")
+    plt.text(50, -5, "daddy")
+    plt.axhline(62, 0, 200)
+    plt.text(-25, 63, "daddy")
+
+    plt.axvline(173, 0, 300, c="red")
+    plt.text(161, -5, "eager")
+    plt.axhline(173, 0, 300, c="red")
+    plt.text(-25, 174, "eager")
+    plt.savefig('zoom300_labeled.png')
+    plt.clf()
+
+    ####
+
+    sns.set(rc={'figure.figsize': (25, 20)})
+    sns.heatmap(differences, xticklabels=200, yticklabels=200,  cbar_kws={'label': 'number of differentiating words'})
+    plt.savefig('all.png')
+    plt.clf()
 
 
 def distribution():
@@ -78,70 +105,72 @@ def distribution():
     # plt.savefig('histogram.png', dpi=2000)
 
 
+def get_differenting_words(id1, id2):
+    list = []
+
+    word1 = id1
+    word2 = id2
+    for g in range(word_list_len):
+        if response(word_list[g], word_list[word1]) != response(word_list[g], word_list[word2]):
+            list.append(word_list[g])
+            # print('"' + word_list[g] + '", ', end='')
+
+    return list
+
+def get_worst(threshold):
+    cands = []
+
+    for i in range(word_list_len):
+        for j in range(i + 1, word_list_len):
+            if differences[i][j] <= threshold and differences[i][j] != 0:
+                cands.append((i, j))
+                print(i, j, word_list[i], word_list[j], differences[i][j])
+
+    return cands
+
+
+def solve_pairs(pairs):
+    res = []
+    # print(pairs)
+
+    for i in range(len(pairs)):
+        (w1, w2) = pairs[i]
+        id1 = bisect.bisect_left(word_list, w1)
+        id2 = bisect.bisect_left(word_list, w2)
+
+        diff = get_differenting_words(id1, id2)
+
+        if i == 0:
+            res = diff
+        else:
+            tmp = [v for v in diff if v in res]
+            res = tmp
+
+    return res
+
 if __name__ == "__main__":
     # calculate_differences()
     differences = np.load('differences.npy')
     # save_heatmap()
     # distribution()
 
-    cands = []
+    # cands = get_worst(220)
 
-    for i in range(word_list_len):
-        for j in range(i + 1, word_list_len):
-            if differences[i][j] <= 150 and differences[i][j] != 0:
-                cands.append((i, j))
-                print(i, j, word_list[i], word_list[j])
+    unsolved = [("bobby", "booby"), ("paper", "parer"), ("truss", "trust"), ("crock", "crook")]
 
-    list1 = []
-
-    word1 = 8
-    word2 = 23
-    for g in range(word_list_len):
-        if response(word_list[g], word_list[word1]) != response(word_list[g], word_list[word2]):
-            list1.append(word_list[g])
-            print('"' + word_list[g] + '", ', end='')
-            # print(word_list[g], response(word_list[g], word_list[word1]), response(word_list[g], word_list[word2]))
-
-    # list2 = []
-    # word1 = 242
-    # word2 = 247
-    # for g in range(word_list_len):
-    #     if response(word_list[g], word_list[word1]) != response(word_list[g], word_list[word2]):
-    #         list2.append(word_list[g])
-    #         print('"' + word_list[g] + '", ', end='')
-
-    # lst3 = [value for value in list1 if value in list2]
+    print(solve_pairs([("catch", "hatch"), ("ample", "maple"), ("eagle", "legal"), ("droll", "drool"), ("abode",
+                                                                                                     "adobe")]))
+    print(solve_pairs([("bobby", "booby"), ("dowry", "rowdy"), ("truss", "trust"), ("piper", "riper"),
+                       ("crock", "crook")]))
+    print(solve_pairs([("bobby", "booby"), ("rogue", "rouge"), ("truss", "trust"), ("below", "elbow"), ("crock", "crook")]))
+    print(solve_pairs([("catch", "hatch"), ("ample", "maple"), ("eagle", "legal"), ("droll", "drool"), ("abode", "adobe")]))
+    print(solve_pairs([("catch", "hatch"), ("droll", "drool"), ("ample", "maple"), ("eagle", "legal"), ("abode", "adobe")]))
+    print(solve_pairs([("skate", "stake"), ("chili", "chill"), ("pasty", "patsy"), ("snoop", "spoon"), ("abode",
+                                                                                                          "adobe")]))
+    # print(solve_pairs([("abode", "adobe")]))
     #
-    # res = []
-
-    # for (x1, y1) in cands:
-    #     for (x2, y2) in cands:
-    #         if x1 == x2 and y1 == y2:
-    #             continue
-    #
-    #         if x1 > x2:
-    #             continue
-    #
-    #         list1 = []
-    #
-    #         for g in range(word_list_len):
-    #             if response(word_list[g], word_list[x1]) != response(word_list[g], word_list[y1]):
-    #                 list1.append(word_list[g])
-    #
-    #         list2 = []
-    #
-    #         for g in range(word_list_len):
-    #             if response(word_list[g], word_list[x2]) != response(word_list[g], word_list[y2]):
-    #                 list2.append(word_list[g])
-    #
-    #         lst3 = [value for value in list1 if value in list2]
-    #
-    #         res.append(len(lst3))
-    #         # if len(lst3) <= 2:
-    #         #     print(lst3)
-    #         print(len(lst3), "\t\t", x1, y1, x2, y2, lst3)
-
-    # res.sort()
-    # print(res[:10])
-
-    # print(len(lst3), lst3)
+    # print(solve_pairs(unsolved[1:]))
+    # print(solve_pairs(unsolved[:1] + unsolved[2:]))
+    # print(solve_pairs(unsolved[:2] + unsolved[3:]))
+    # print(solve_pairs(unsolved[:3]))
+    # print(solve_pairs(unsolved))
