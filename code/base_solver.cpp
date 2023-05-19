@@ -54,3 +54,58 @@ BaseSolver::BaseSolver(vector<string> &guess, vector<string> &sols) {
 	solve_clues(solutions);
 	solution_ids = getSolutionsId(solutions, guesses);
 }
+
+vector< vector<int> > BaseSolver::check_determinizm(const vector<string> &checked_guesses,
+													vector< vector<int> > &counter,
+													vector< vector<int> > &sum,
+													vector< vector<int> > &maxi) {
+	vector<size_t> checked_guesses_ids;
+	checked_guesses_ids.reserve(checked_guesses.size());
+
+	for (const string &s : checked_guesses)
+		checked_guesses_ids.emplace_back(lower_bound(guesses.begin(), guesses.end(), s) - guesses.begin());
+
+	counter = vector< vector<int> >(wordSize + 1, vector<int>(wordSize + 1));
+	sum = vector< vector<int> >(wordSize + 1, vector<int>(wordSize + 1));
+	maxi = vector< vector<int> >(wordSize + 1, vector<int>(wordSize + 1));
+
+	for (size_t sol_id = 0; sol_id < solution_ids.size(); sol_id++) {
+		string s = solutions[sol_id];
+
+		vector< string > answers(wordSize, string(wordSize, '-'));
+		cout << s << "\n";
+		DeadLetters dl(wordSize);
+		for (size_t guess_id : checked_guesses_ids) {
+			dl.addResponse(guesses[guess_id], solutionClue[guess_id][sol_id]);
+			cout << guesses[guess_id] << " " << solutionClue[guess_id][sol_id].code << "\n";
+
+			for (int i = 0; i < wordSize; i++) {
+				for (int j = 0; j < wordSize; j++) {
+					if (s[i] == guesses[guess_id][j]) {
+						answers[i][j] = max(answers[i][j], solutionClue[guess_id][sol_id].code[j]);
+					}
+				}
+			}
+		}
+
+		for (int i = 0; i < wordSize; i++) {
+			cout << s[i] << " " << answers[i] << "\n";
+		}
+
+		int green = dl.green_letters();
+		int yellow = dl.yellow_letters();
+		cout << "green: " << green << " yellow: " << yellow << "\n";
+
+		int coherent = dl.coherent_guesses();
+		cout << "coherent: " << coherent << "\n";
+
+		assert(0 <= green && green <= 5);
+		assert(0 <= yellow && yellow <= 5);
+		assert(yellow + green <= 5);
+		counter[green][yellow]++;
+		sum[green][yellow] += coherent;
+		maxi[green][yellow] = max(maxi[green][yellow], coherent);
+	}
+
+	return counter;
+}

@@ -48,7 +48,7 @@ double timeDiff(const chrono::time_point<chrono::system_clock> &t0, const chrono
 	return chrono::duration<double>(t1 - t0).count();
 }
 
-double since(const std::chrono::time_point<std::chrono::system_clock> &t0) {
-	return timeDiff(t0, std::chrono::system_clock::now());
+double since(const chrono::time_point<chrono::system_clock> &t0) {
+	return timeDiff(t0, chrono::system_clock::now());
 }
 

@@ -1,7 +1,3 @@
-//
-// Created by michal on 16.03.23.
-//
-
 #ifndef WORDLE_UTILS_H
 #define WORDLE_UTILS_H
 
@@ -24,5 +20,28 @@ Response getResponse(string guess, string solution);
 double timeDiff(const chrono::time_point<chrono::system_clock> &t0, const chrono::time_point<chrono::system_clock> &t1);
 
 double since(const chrono::time_point<std::chrono::system_clock> &t0);
+
+template<typename T>
+void print_python_array(const vector<vector<T>> &v) {
+	cout << "[\n";
+	for (size_t i = 0; i < v.size(); i++) {
+		cout << "\t[";
+		for (size_t j = 0; j < v[i].size(); j++) {
+			cout << "" << v[i][j];
+
+			if (j + 1 != v[i].size())
+				cout << ", ";
+		}
+		cout << "]";
+
+		if (i + 1 != v.size())
+			cout << ", ";
+
+		cout << "\n";
+	}
+	cout << "]\n";
+}
+
+
 
 #endif //WORDLE_UTILS_H

@@ -15,7 +15,7 @@
 using namespace std;
 
 
-class StaticSolver : protected BaseSolver {
+class StaticSolver : public BaseSolver {
 	using BaseSolver::BaseSolver;
 public:
 	void solve();

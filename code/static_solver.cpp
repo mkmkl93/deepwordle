@@ -64,7 +64,13 @@ void StaticSolver::showPartition(vector<string> &&known_guesses) {
 			chars.insert(c);
 	}
 
-	cout << chars.size() << "\n";
+	cout << "letters: " << chars.size() << " absent: ";
+	for (char c = 'a'; c <= 'z'; c++) {
+		if (chars.find(c) == chars.end()) {
+			cout << c << " ";
+		}
+	}
+	cout << "\n";
 
 	for (const string &s : known_guesses) {
 		size_t place = lower_bound(guesses.begin(), guesses.end(), s) - guesses.begin();

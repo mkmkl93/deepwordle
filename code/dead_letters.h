@@ -9,6 +9,8 @@
 #include <cassert>
 #include "response.h"
 #include <cstring>
+#include <set>
+#include <iostream>
 
 using namespace std;
 
@@ -31,9 +33,23 @@ struct DeadLetters {
 
 	bool operator<(const DeadLetters& dl) const;
 
-	int green_letters() const;
+	bool certain(int i);
 
-	int yellow_letters() const;
+	void tryToInfer();
+
+	bool infer1();
+
+	bool infer2();
+
+	int green_letters();
+
+	int yellow_letters();
+
+	vector<char> certainLetters();
+
+	int coherent_guesses(int layer = 0, vector<char> guess = {});
+
+	vector<char> intersect(vector<char> a, vector<char> b);
 };
 
 #endif //WORDLE_DEAD_LETTERS_H
