@@ -6,6 +6,7 @@
 #include "greedy_solver.h"
 #include "static_solver.h"
 #include "utils.h"
+#include "semi_static_solver.h"
 
 void show_static_solution_metrics(const vector<string> &sol) {
 	vector<string> solutions = WordsHandler::solutions();
@@ -64,17 +65,22 @@ int main() {
 //	XenSolver xen_solver = XenSolver();
 //	xen_solver.solve(guess, solutions);
 
-	DeepSolver deepSolver = DeepSolver();
+//	DeepSolver deepSolver = DeepSolver();
 //	deepSolver.solve(guess, solutions);
 
 //	GreedySolver greedySolver = GreedySolver();
 //	greedySolver.solve(guess, solutions);
 
 	StaticSolver staticSolver = StaticSolver(guess, solutions);
-//	staticSolver.solve();
+	staticSolver.solve();
 
+//	compare_static_solutions();
 
-	compare_static_solutions();
+	SemiStaticSolver semiStaticSolver = SemiStaticSolver(guess, solutions);
+//	semiStaticSolver.solve();
+//	semiStaticSolver.printDynamicArray({"bugle", "champ", "downy", "first"});
+//	semiStaticSolver.showMaxPartition({"bugle", "champ", "downy", "first"});
+//	cout << Response("00011") << " " << Response("00001") << " " << Response("02000");
 
 	return 0;
 }

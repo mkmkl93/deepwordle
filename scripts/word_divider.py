@@ -330,12 +330,24 @@ if __name__ == "__main__":
     # save_heatmap()
     # distribution()
     # save_letters_count1()
-    save_statistics()
+    # save_statistics()
 
     # cands = get_worst(220)
 
-    # unsolved = [("bobby", "booby"), ("paper", "parer"), ("truss", "trust"), ("crock", "crook")]
-    #
+    unsolved = [("eater", "extra"), ("extra", "taker"), ("taker", "eater")]
+    print(solve_pairs([("piper", "riper"), ("riper", "viper"), ("viper", "piper")]))
+    print(solve_pairs([("eater", "extra"), ("extra", "taker"), ("taker", "eater")]))
+    print(solve_pairs([("jaunt", "taunt"), ("taunt", "vaunt"), ("vaunt", "jaunt")]))
+    print(solve_pairs([("bobby", "booby"), ("booby", "boozy"), ("boozy", "bobby")]))
+    print(solve_pairs([
+        ("skate", "stake"),
+        ("skate", "state"),
+        ("skate", "stave"),
+        ("stake", "state"),
+        ("stake", "stave"),
+        ("state", "stave"),
+    ]))
+
     # print(solve_pairs([("catch", "hatch"), ("ample", "maple"), ("eagle", "legal"), ("droll", "drool"), ("abode",
     #                                                                                                  "adobe")]))
     # print(solve_pairs([("bobby", "booby"), ("dowry", "rowdy"), ("truss", "trust"), ("piper", "riper"),

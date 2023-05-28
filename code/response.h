@@ -17,6 +17,8 @@ struct Response {
 	operator int();
 
 	string pretty_string();
+
+	string latex_string();
 };
 
 #endif //WORDLE_RESPONSE_H

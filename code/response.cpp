@@ -29,3 +29,13 @@ string Response::pretty_string() {
 
 	return s;
 }
+
+string Response::latex_string() {
+	vector<string> color{"\\w", "\\y", "\\g"};
+	string s;
+
+	for(char &c : code)
+		s += color[c - '0'];
+
+	return s;
+}
