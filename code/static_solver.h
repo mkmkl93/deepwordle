@@ -29,11 +29,9 @@ public:
 				 vector<bool> &repeat,
 				 size_t start_i);
 
-	void showPartition(vector<int> &known_guesses, bool show_partition = false);
+	void showPartition(vector<int> &known_guesses);
 
 	void showPartition(vector<string> &&known_guesses);
-
-	void calc_difference();
 };
 
 #endif //WORDLE_STATIC_SOLVER_H

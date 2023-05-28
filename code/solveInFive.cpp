@@ -73,10 +73,12 @@ int main() {
 
 	StaticSolver staticSolver = StaticSolver(guess, solutions);
 	staticSolver.solve();
+//	vector<int> v = {374, 812, 842, 1064, 1860, 2193};
+//	staticSolver.showPartition(v, false);
 
 //	compare_static_solutions();
 
-	SemiStaticSolver semiStaticSolver = SemiStaticSolver(guess, solutions);
+//	SemiStaticSolver semiStaticSolver = SemiStaticSolver(guess, solutions);
 //	semiStaticSolver.solve();
 //	semiStaticSolver.printDynamicArray({"bugle", "champ", "downy", "first"});
 //	semiStaticSolver.showMaxPartition({"bugle", "champ", "downy", "first"});
