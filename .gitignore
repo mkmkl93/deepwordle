@@ -1,0 +1,6 @@
+scripts/*.png
+scripts/*.svg
+scripts/*.npy
+output*
+.idea/
+cmake-build-debug
