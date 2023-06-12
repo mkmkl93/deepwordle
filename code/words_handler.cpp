@@ -7,7 +7,7 @@ vector< string > WordsHandler::solutions() {
 }
 
 vector<string> WordsHandler::guesses() {
-	string filename = "../common.txt";
+	string filename = "../wordle solutions sorted.txt";
 
 	return readWordFile(filename);
 }

@@ -52,12 +52,9 @@ void compare_static_solutions() {
 
 int main() {
 	vector<string> solutions = WordsHandler::solutions();
-//	solutions.resize(10);
-	//vector<string> guess = readWordFile("guesses5.txt");
-	vector<string> guess = WordsHandler::guesses();
 
 	sort(solutions.begin(), solutions.end());
-	guess = solutions;
+    vector<string> guess = solutions;
 
 //	XenSolver xen_solver = XenSolver();
 //	xen_solver.solve(guess, solutions);
