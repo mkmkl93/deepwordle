@@ -1,10 +1,10 @@
 #include "response.h"
 
-Response::Response(size_t size, int n) {
+Response::Response(int size, int n) {
 	code.resize(size);
 
 	for (int i = size - 1; i >= 0; i--) {
-		code[i] = n % 3 + '0';
+		code[i] = '0' + n % 3;
 		n /= 3;
 	}
 }

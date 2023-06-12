@@ -10,11 +10,11 @@ struct Response {
 
 	Response() = default;
 
-	Response(size_t size, int n);
+	Response(int size, int n);
 
-	Response(string s) : code(s) {};
+	explicit Response(string &&s) : code(s) {};
 
-	operator int();
+	explicit operator int();
 
 	string pretty_string();
 

@@ -1,7 +1,3 @@
-//
-// Created by michal on 31.12.22.
-//
-
 #ifndef WORDLE_WORDS_HANDLER_H
 #define WORDLE_WORDS_HANDLER_H
 
@@ -18,7 +14,7 @@ public:
 	static vector< string > guesses();
 private:
 	// read a file of words into a vector
-	static vector< string > readWordFile(string const &fn);
+	static vector< string > readWordFile(const string &fn);
 };
 
 #endif //WORDLE_WORDS_HANDLER_H

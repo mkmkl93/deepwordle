@@ -17,13 +17,16 @@ class SemiStaticSolver : public BaseSolver {
 public:
 	void solve();
 
+	void solve(int max_depth,
+			   const vector< int > &thresholds);
+
 	void explore(int depth,
-				 int &max_depth,
+				 const int &max_depth,
 				 vector<int> &current_res,
-				 bitset<26> used_chars_base,
-				 vector<int> thresholds,
-				 vector< bitset<26> > &solution_chars,
-				 size_t start_i);
+				 bitset<ALPHABET_SIZE> used_chars_base,
+				 const vector<int> &thresholds,
+				 const vector< bitset<ALPHABET_SIZE> > &solution_chars,
+				 int start_i);
 
 	void checkPartition(const vector<int> &known_guesses);
 

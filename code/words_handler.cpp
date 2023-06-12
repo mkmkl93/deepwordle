@@ -1,7 +1,3 @@
-//
-// Created by michal on 31.12.22.
-//
-
 #include "words_handler.h"
 
 vector< string > WordsHandler::solutions() {
@@ -16,13 +12,16 @@ vector<string> WordsHandler::guesses() {
 	return readWordFile(filename);
 }
 
-vector<string> WordsHandler::readWordFile(string const & fn) {
-	vector<string> words;
+vector<string> WordsHandler::readWordFile(const string &fn) {
+	vector< string > words;
+
 	ifstream wordFile(fn);
 	string w;
+
 	while (getline(wordFile, w)) {
 		words.push_back(w);
 	}
+
 	wordFile.close();
 
 	return words;

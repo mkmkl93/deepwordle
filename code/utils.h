@@ -42,6 +42,6 @@ void print_python_array(const vector<vector<T>> &v) {
 	cout << "]\n";
 }
 
-
+constexpr int ALPHABET_SIZE = 26;
 
 #endif //WORDLE_UTILS_H

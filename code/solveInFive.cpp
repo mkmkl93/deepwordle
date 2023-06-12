@@ -1,9 +1,6 @@
 #include <string>
 #include <vector>
 #include "words_handler.h"
-#include "deep_solver.h"
-#include "xen_solver.h"
-#include "greedy_solver.h"
 #include "static_solver.h"
 #include "utils.h"
 #include "semi_static_solver.h"
@@ -46,7 +43,8 @@ void show_static_solution_metrics(const vector<string> &sol) {
 }
 
 void compare_static_solutions() {
-	vector<string> sol = {"gawky", "spend", "jumbo", "fritz", "chill", "verge", "robot"};
+//	vector<string> sol = {"gawky", "spend", "jumbo", "fritz", "chill", "verge", "robot"};
+	vector<string> sol = {"blitz", "curve" ,"fight", "jewel", "moody", "spank", "radar"};
 
 	show_static_solution_metrics(sol);
 }
@@ -61,7 +59,6 @@ int main() {
 	sort(solutions.begin(), solutions.end());
 	guess = solutions;
 
-
 //	XenSolver xen_solver = XenSolver();
 //	xen_solver.solve(guess, solutions);
 
@@ -72,11 +69,12 @@ int main() {
 //	greedySolver.solve(guess, solutions);
 
 	StaticSolver staticSolver = StaticSolver(guess, solutions);
-	staticSolver.solve();
+//	staticSolver.solve();
+
 //	vector<int> v = {374, 812, 842, 1064, 1860, 2193};
 //	staticSolver.showPartition(v, false);
 
-//	compare_static_solutions();
+	compare_static_solutions();
 
 //	SemiStaticSolver semiStaticSolver = SemiStaticSolver(guess, solutions);
 //	semiStaticSolver.solve();

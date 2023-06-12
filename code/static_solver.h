@@ -20,18 +20,25 @@ class StaticSolver : public BaseSolver {
 public:
 	void solve();
 
+	void solve(const int &max_depth,
+			   const vector< vector<int> > &space,
+			   const vector< int > &thresholds);
+
 	void explore(int depth,
+				 const int &max_depth,
 				 vector<int> &current_res,
-				 bitset<26> &used_chars_base,
-				 vector<int> &treshholds,
-				 vector< vector<int> > &space,
-				 vector< bitset<26> > &solution_chars,
-				 vector<bool> &repeat,
+				 const bitset<26> &used_chars_base,
+				 const vector<int> &thresholds,
+				 const vector< vector<int> > &space,
+				 const vector< bitset<26> > &solution_chars,
+				 const vector<bool> &repeat,
 				 size_t start_i);
 
 	void showPartition(vector<int> &known_guesses);
 
 	void showPartition(vector<string> &&known_guesses);
+
+	void findSolutionInOne(const vector< vector< string > > &arr);
 };
 
 #endif //WORDLE_STATIC_SOLVER_H

@@ -1,7 +1,9 @@
 #include "dead_letters.h"
-#include <assert.h>
+#include <cassert>
 
-void check(DeadLetters d, vector<int> v, vector<char> m) {
+const int WORD_SIZE = 5;
+
+void check(const DeadLetters &d, const vector<int> &v, const vector<char> &m) {
 	for (int i = 0; i < WORD_SIZE; i++) {
 		assert(d.dead[i] == v[i]);
 	}
@@ -10,53 +12,50 @@ void check(DeadLetters d, vector<int> v, vector<char> m) {
 }
 
 int main() {
-	// Pojedyncze zapytania
 	{
-		DeadLetters d;
-		d.dead[0].to_ulong(); // żeby nie zinlinowała tej funkcji
+		DeadLetters d(WORD_SIZE);
 		Response r("00000");
 		d.addResponse("aaaaa", r);
 		check(d, {0b1, 0b1, 0b1, 0b1, 0b1}, {});
 	}
 
 	{
-		DeadLetters d;
+		DeadLetters d(WORD_SIZE);
 		Response r("20000");
 		d.addResponse("abcde", r);
 		check(d, {0b11111111111111111111111110, 0b11110, 0b11110, 0b11110, 0b11110}, {'a'});
 	}
 
 	{
-		DeadLetters d;
+		DeadLetters d(WORD_SIZE);
 		Response r("20000");
 		d.addResponse("aacde", r);
 		check(d, {0b11111111111111111111111110, 0b11101, 0b11101, 0b11101, 0b11101}, {'a'});
 	}
 
 	{
-		DeadLetters d;
+		DeadLetters d(WORD_SIZE);
 		Response r("21000");
 		d.addResponse("aaabc", r);
 		check(d, {0b11111111111111111111111110, 0b111, 0b111, 0b110, 0b110}, {'a', 'a'});
 	}
 
 	{
-		DeadLetters d;
+		DeadLetters d(WORD_SIZE);
 		Response r("11000");
 		d.addResponse("aaabc", r);
 		check(d, {0b111, 0b111, 0b111, 0b110, 0b110}, {'a', 'a'});
 	}
 
 	{
-		DeadLetters d;
+		DeadLetters d(WORD_SIZE);
 		Response r("11000");
 		d.addResponse("aabbb", r);
 		check(d, {0b11, 0b11, 0b10, 0b10, 0b10}, {'a', 'a'});
 	}
 
-	// Łączone zapytania
 	{
-		DeadLetters d;
+		DeadLetters d(WORD_SIZE);
 		Response r;
 
 		r = Response("11000");
@@ -69,7 +68,7 @@ int main() {
 	}
 
 	{
-		DeadLetters d;
+		DeadLetters d(WORD_SIZE);
 		Response r;
 
 		r = Response("10000");
@@ -82,7 +81,7 @@ int main() {
 	}
 
 	{
-		DeadLetters d;
+		DeadLetters d(WORD_SIZE);
 		Response r;
 
 		r = Response("11000");
@@ -93,6 +92,4 @@ int main() {
 		d.addResponse("acddd", r);
 		check(d, {0b1001, 0b1110, 0b1000, 0b1000, 0b1000}, {'a', 'b', 'c'});
 	}
-
-
 }

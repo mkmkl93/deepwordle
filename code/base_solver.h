@@ -9,13 +9,14 @@ using namespace std;
 
 class BaseSolver {
 public:
-	BaseSolver() { }
+	BaseSolver() : wordSize(-1), answerSize(-1) { }
 	BaseSolver(vector<string> &guesses, vector<string> &solutions);
 
 	vector< vector<int> > check_determinizm(const vector<string> &checked_guesses,
 											vector< vector<int> > &counter,
 											vector< vector<int> > &sum,
 											vector< vector<int> > &maxi);
+
 protected:
 	chrono::time_point<chrono::system_clock> start_time;
 	size_t wordSize;
@@ -25,7 +26,6 @@ protected:
 	vector<int> solution_ids;
 	vector<string> guesses;
 	vector<string> solutions;
-
 
 	void solve_clues(const vector<string> &guess);
 

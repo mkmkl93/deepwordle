@@ -1,7 +1,3 @@
-//
-// Created by michal on 12.03.23.
-//
-
 #ifndef WORDLE_DEAD_LETTERS_H
 #define WORDLE_DEAD_LETTERS_H
 
@@ -11,15 +7,16 @@
 #include <cstring>
 #include <set>
 #include <iostream>
+#include "utils.h"
 
 using namespace std;
 
 struct DeadLetters {
-	vector< bitset<26> > dead;
+	vector< bitset<ALPHABET_SIZE> > dead;
 	vector<char> known;
-	int word_size;
+	size_t word_size;
 
-	DeadLetters(size_t n) : word_size(n) { dead.resize(n); };
+	explicit DeadLetters(size_t n) : word_size(n) { dead.resize(n); };
 
 	void killOne(int i, char letter);
 
@@ -47,9 +44,9 @@ struct DeadLetters {
 
 	vector<char> certainLetters();
 
-	int coherent_guesses(int layer = 0, vector<char> guess = {});
+	int coherent_guesses(int layer = 0, const vector<char>& guess = {});
 
-	vector<char> intersect(vector<char> a, vector<char> b);
+	static vector<char> intersect(vector<char> a, vector<char> b);
 };
 
 #endif //WORDLE_DEAD_LETTERS_H

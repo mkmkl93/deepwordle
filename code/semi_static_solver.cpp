@@ -12,7 +12,7 @@ void SemiStaticSolver::checkPartition(const vector<int> &known_guesses) {
 
 		for (const int &id : known_guesses) {
 			v <<= 9;
-			v |= solutionClue[id][guess];
+			v |= int(solutionClue[id][guess]);
 		}
 
 		counter[v]++;
@@ -57,7 +57,7 @@ void SemiStaticSolver::showMaxPartition(const vector<int> &known_guesses) {
 
 		for (const int &id : known_guesses) {
 			v <<= 9;
-			v |= solutionClue[id][guess];
+			v |= (int)solutionClue[id][guess];
 		}
 
 		counter[v].emplace_back(guess);
@@ -102,7 +102,7 @@ void SemiStaticSolver::showMaxPartition(const vector<string> &&known_guesses) {
 		size_t place = lower_bound(guesses.begin(), guesses.end(), s) - guesses.begin();
 
 		if (guesses[place] != s)
-			throw "Guess not allowed";
+			throw runtime_error("Guess not allowed");
 
 		guesses_id.emplace_back(place);
 	}
@@ -114,11 +114,18 @@ void SemiStaticSolver::showMaxPartition(const vector<string> &&known_guesses) {
 void SemiStaticSolver::solve() {
 	start_time = chrono::system_clock::now();
 
-	vector< bitset<26> > solution_chars;
-	for (const string &s : solutions) {
-		bitset<26> bits;
+	vector<int> thresholds = {4, 9, 14, 19};
 
-		for (char c : s)
+	solve((int)thresholds.size(), thresholds);
+}
+
+void SemiStaticSolver::solve(const int max_depth,
+							 const vector< int > &thresholds) {
+	vector< bitset<ALPHABET_SIZE> > solution_chars;
+	for (const string &s : solutions) {
+		bitset<ALPHABET_SIZE> bits;
+
+		for (const char &c : s)
 			bits[c - 'a'] = true;
 
 		solution_chars.emplace_back(bits);
@@ -127,14 +134,12 @@ void SemiStaticSolver::solve() {
 	const int nThread = clamp(int(thread::hardware_concurrency()), 1, 10);
 
 	ctpl::thread_pool pool(nThread);
-	int max_depth = 4;
-	vector<int> thresholds = {4, 9, 14, 19};
 
-	for (size_t i = 0; i < solution_ids.size(); i++) {
+	for (int i = 0; i < solution_ids.size(); i++) {
 		pool.push([this, i, &max_depth, thresholds, &solution_chars](int id) {
 			vector<int> current_res(max_depth);
 			current_res[0] = (int)i;
-			bitset<26> used_chars = solution_chars[i];
+			bitset<ALPHABET_SIZE> used_chars = solution_chars[i];
 
 			explore(1, max_depth, current_res, used_chars, thresholds, solution_chars, i + 1);
 
@@ -144,17 +149,15 @@ void SemiStaticSolver::solve() {
 	}
 }
 
-void SemiStaticSolver::explore(int depth,
-							   int &max_depth,
+void SemiStaticSolver::explore(const int depth,
+							   const int &max_depth,
 							   vector<int> &current_res,
-							   bitset<26> used_chars_base,
-							   vector<int> thresholds,
-							   vector< bitset<26> > &solution_chars,
-							   size_t start_i) {
-	assert(depth < 4);
-
-	for (size_t i = start_i; i < solution_ids.size(); i++) {
-		bitset<26> used_chars = used_chars_base | solution_chars[i];
+							   const bitset<ALPHABET_SIZE> used_chars_base,
+							   const vector<int> &thresholds,
+							   const vector< bitset<ALPHABET_SIZE> > &solution_chars,
+							   const int start_i) {
+	for (int i = start_i; i < solution_ids.size(); i++) {
+		bitset<ALPHABET_SIZE> used_chars = used_chars_base | solution_chars[i];
 
 		if (used_chars.count() < thresholds[depth]) {
 			continue;
@@ -177,7 +180,7 @@ void SemiStaticSolver::printDynamicArray(const vector<string> &&known_guesses) {
 		size_t place = lower_bound(guesses.begin(), guesses.end(), s) - guesses.begin();
 
 		if (guesses[place] != s)
-			throw "Guess not allowed";
+			throw runtime_error("Guess not allowed");
 
 		guesses_id.emplace_back(place);
 	}
@@ -193,6 +196,7 @@ void SemiStaticSolver::printDynamicArray(const vector<int> &known_guesses) {
 
 	for (int guess = 0; guess < n; guess++) {
 		vector<int> k;
+		k.reserve(known_guesses.size());
 
 		for (const int &id : known_guesses) {
 			k.emplace_back(solutionClue[id][guess]);

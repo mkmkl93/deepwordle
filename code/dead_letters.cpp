@@ -136,8 +136,7 @@ int DeadLetters::green_letters() {
 }
 
 int DeadLetters::yellow_letters() {
-//	return max((int)known.size() - green_letters(), 0);
-	return known.size() - green_letters();
+	return (int)known.size() - green_letters();
 }
 
 // Only works because there are 24 unique letters in the solution and not 25
@@ -280,7 +279,7 @@ vector<char> DeadLetters::certainLetters() {
 	return res;
 }
 
-int DeadLetters::coherent_guesses(int layer, vector<char> guess) {
+int DeadLetters::coherent_guesses(int layer, const vector<char>& guess) {
 	if (layer == word_size) {
 		vector<char> inter = intersect(guess, known);
 
@@ -289,7 +288,7 @@ int DeadLetters::coherent_guesses(int layer, vector<char> guess) {
 
 	int res = 0;
 
-	for (size_t i = 0; i < 26; i++) {
+	for (size_t i = 0; i < ALPHABET_SIZE; i++) {
 		if (!dead[layer][i]) {
 			vector<char> next = guess;
 			next.emplace_back('a' + i);

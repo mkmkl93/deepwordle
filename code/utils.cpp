@@ -9,7 +9,7 @@ vector<int> getSolutionsId(vector<string> &solutions, vector<string> &guess) {
 		if (loc != guess.end())
 			solution.push_back(int(loc - guess.begin()));
 		else
-			throw "solution not included in guess";
+			throw runtime_error("solution not included in guess");
 	}
 
 	return solution;
@@ -18,7 +18,7 @@ vector<int> getSolutionsId(vector<string> &solutions, vector<string> &guess) {
 Response getResponse(string guess, string solution) {
 	assert(guess.size() == solution.size());
 
-	size_t n = guess.size();
+	int n = (int)guess.size();
 
 	string res(n, '0');
 
@@ -41,7 +41,7 @@ Response getResponse(string guess, string solution) {
 		}
 	}
 
-	return { res };
+	return Response(move(res));
 }
 
 double timeDiff(const chrono::time_point<chrono::system_clock> &t0, const chrono::time_point<chrono::system_clock> &t1) {
